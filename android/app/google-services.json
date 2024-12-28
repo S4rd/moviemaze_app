@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "795728316104",
+    "project_id": "moviemaze-app",
+    "storage_bucket": "moviemaze-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:795728316104:android:c224439e3ddf66443c07fd",
+        "android_client_info": {
+          "package_name": "moviemaze.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB1GoafccnF1Zd1WovRzZ1TTFEFSeZbMqc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
