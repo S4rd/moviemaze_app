@@ -1,14 +1,15 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'pages/login_page.dart';
+import 'package:moviemaze_app/pages/login_page.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-
-  // If using webview_flutter and you see an error about WebView.platform,
-  // you might do:
-  // WebView.platform = SurfaceAndroidWebView(); // Only if needed.
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    // If using FlutterFire CLI auto-gen: options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   runApp(const MyApp());
 }
@@ -24,7 +25,8 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.deepOrange,
         scaffoldBackgroundColor: Colors.black,
       ),
-      home: const LoginPage(), // After successful login -> HomePage
+      home: const LoginPage(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }

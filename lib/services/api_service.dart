@@ -34,20 +34,6 @@ class ApiService {
     }
   }
 
-  /// Search for movies with a given query.
-  /// (If you wish to also search TV, create a similar function or modify this one.)
-  Future<List<Map<String, dynamic>>> searchMovies(String query) async {
-    final url = Uri.parse("$baseUrl/search/movie?api_key=$apiKey&query=$query");
-    final response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final List results = data["results"];
-      return results.cast<Map<String, dynamic>>();
-    } else {
-      return [];
-    }
-  }
 
   /// Fetch details for a movie by ID.
   Future<Map<String, dynamic>?> fetchMovieDetails(int movieId) async {
@@ -105,7 +91,6 @@ class ApiService {
     }
   }
 
-  /// Fetch the trailer (YouTube Key) for a movie.
   Future<String?> fetchMovieTrailerKey(int movieId) async {
     final url = Uri.parse(
       "$baseUrl/movie/$movieId/videos?api_key=$apiKey&language=en-US",
@@ -113,18 +98,45 @@ class ApiService {
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final List results = data['results'];
-      if (results.isNotEmpty) {
-        // Usually the first or any named "Trailer" is the official trailer
-        final video = results.first;
-        return video['key']; // For YouTube
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final List results = data['results'] ?? [];
+
+      // 1) Try to find a video with type="Trailer" and site="YouTube"
+      final trailer = results.firstWhere(
+            (video) =>
+        (video['type'] == 'Trailer') &&
+            (video['site'] == 'YouTube'),
+        orElse: () => null,
+      );
+
+      if (trailer != null) {
+        return trailer['key'] as String?;
       }
+
+      // 2) If no actual "Trailer", fallback to "Teaser"
+      final teaser = results.firstWhere(
+            (video) =>
+        (video['type'] == 'Teaser') &&
+            (video['site'] == 'YouTube'),
+        orElse: () => null,
+      );
+
+      if (teaser != null) {
+        return teaser['key'] as String?;
+      }
+
+      // 3) Optionally, fallback to any video
+      // final anyVideo = results.isNotEmpty ? results.first : null;
+      // if (anyVideo != null) {
+      //   return anyVideo['key'];
+      // }
+
+      // 4) Otherwise, no suitable trailer found
+      return null;
     }
     return null;
   }
 
-  /// Fetch the trailer (YouTube Key) for a TV show.
   Future<String?> fetchSeriesTrailerKey(int seriesId) async {
     final url = Uri.parse(
       "$baseUrl/tv/$seriesId/videos?api_key=$apiKey&language=en-US",
@@ -132,13 +144,83 @@ class ApiService {
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final List results = data['results'];
-      if (results.isNotEmpty) {
-        final video = results.first;
-        return video['key'];
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final List results = data['results'] ?? [];
+
+      // 1) Look for official YouTube trailer
+      final trailer = results.firstWhere(
+            (video) =>
+        (video['type'] == 'Trailer') &&
+            (video['site'] == 'YouTube'),
+        orElse: () => null,
+      );
+      if (trailer != null) {
+        return trailer['key'] as String?;
       }
+
+      // 2) If none, fallback to a Teaser
+      final teaser = results.firstWhere(
+            (video) =>
+        (video['type'] == 'Teaser') &&
+            (video['site'] == 'YouTube'),
+        orElse: () => null,
+      );
+      if (teaser != null) {
+        return teaser['key'] as String?;
+      }
+
+      // 3) Otherwise, no trailer found
+      return null;
     }
     return null;
+  }
+
+  Future<List<Map<String, dynamic>>> searchMovies(String query) async {
+    final url = Uri.parse("$baseUrl/search/movie?api_key=$apiKey&query=$query&language=en-US");
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final List rawResults = data["results"] ?? [];
+
+      // 1) Convert each item to Map<String, dynamic>
+      final List<Map<String, dynamic>> results = rawResults.map((r) {
+        // Force-convert dynamic map to Map<String, dynamic>
+        return Map<String, dynamic>.from(r);
+      }).toList();
+
+      // 2) Insert 'mediaType': 'movie' on each
+      for (var item in results) {
+        item['mediaType'] = 'movie';
+      }
+
+      // 3) Return final list
+      return results;
+    } else {
+      return [];
+    }
+  }
+
+
+  Future<List<Map<String, dynamic>>> searchSeries(String query) async {
+    final url = Uri.parse("$baseUrl/search/tv?api_key=$apiKey&query=$query&language=en-US");
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final List rawResults = data["results"] ?? [];
+
+      final List<Map<String, dynamic>> results = rawResults.map((r) {
+        return Map<String, dynamic>.from(r);
+      }).toList();
+
+      for (var item in results) {
+        item['mediaType'] = 'tv';
+      }
+
+      return results;
+    } else {
+      return [];
+    }
   }
 }
